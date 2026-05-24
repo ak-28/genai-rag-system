@@ -1,12 +1,16 @@
 [project]
-name = "genai_rag_system"
+name = "genai-rag-system"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local PDF RAG chatbot using Ollama, LangChain, and ChromaDB"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
+
 dependencies = [
-    "langchain>=1.3.1",
-    "langchain-community>=0.4.2",
-    "pandas>=3.0.3",
-    "pypdf>=6.12.1",
+    "langchain",
+    "langchain-community",
+    "chromadb",
+    "sentence-transformers",
+    "pypdf",
+    "streamlit",
+    "ollama"
 ]
