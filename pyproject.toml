@@ -12,5 +12,6 @@ dependencies = [
     "sentence-transformers",
     "pypdf",
     "streamlit",
-    "ollama"
+    "ollama",
+    "langchain-text-splitters>=1.1.2",
 ]
