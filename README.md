@@ -1,6 +1,6 @@
-# GenAI RAG System — V1 PDF Chatbot
+# GenAI RAG System — V2 Multi-Document RAG Chatbot
 
-A simple local Retrieval-Augmented Generation (RAG) chatbot built using:
+A local Retrieval-Augmented Generation (RAG) chatbot capable of searching across multiple PDF documents using:
 
 - Ollama
 - LangChain
@@ -8,36 +8,22 @@ A simple local Retrieval-Augmented Generation (RAG) chatbot built using:
 - Streamlit
 - Sentence Transformers
 
-This project demonstrates the complete V1 RAG pipeline:
-
-```text
-PDF
- ↓
-Chunking
- ↓
-Embeddings
- ↓
-Vector Database
- ↓
-Retrieval
- ↓
-LLM Generation
- ↓
-Answer
-```
+This version upgrades the V1 single-document chatbot into a persistent multi-document semantic knowledge system.
 
 ---
 
 # Features
 
-- PDF ingestion
-- Recursive text chunking
-- Dense embeddings
-- Chroma vector database
-- Semantic similarity search
-- Local LLM inference using Ollama
-- Streamlit chat interface
-- Fully local RAG pipeline
+## V2 Enhancements
+
+- Multi-PDF ingestion
+- Persistent vector database
+- Metadata-aware retrieval
+- Source citations
+- Cross-document semantic search
+- Retrieved chunk inspection
+- Modular RAG architecture
+- Fully local inference using Ollama
 
 ---
 
@@ -51,7 +37,71 @@ Answer
 | Embeddings | sentence-transformers |
 | UI | Streamlit |
 | Environment | uv |
-| OS | WSL2 Ubuntu |
+| Runtime | WSL2 Ubuntu |
+
+---
+
+# What is RAG?
+
+RAG stands for:
+
+```text
+Retrieval-Augmented Generation
+```
+
+Instead of relying only on an LLM’s internal knowledge, RAG:
+
+1. retrieves relevant information
+2. injects retrieved context into prompts
+3. generates grounded responses
+
+This significantly reduces hallucinations and enables document-aware question answering.
+
+---
+
+# V2 Architecture
+
+```text
+                    ┌────────────────────┐
+                    │   Multiple PDFs    │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │     Ingestion      │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │      Chunking      │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │     Embeddings     │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │      ChromaDB      │
+                    │  Persistent Store  │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │     Retrieval      │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │      Ollama        │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │ Answer + Citations │
+                    └────────────────────┘
+```
 
 ---
 
@@ -70,11 +120,16 @@ genai-rag-system/
 │   │
 │   ├── vectorstore/
 │   │   ├── __init__.py
-│   │   └── chroma_store.py
+│   │   ├── chroma_store.py
+│   │   └── retriever.py
 │   │
 │   ├── llm/
 │   │   ├── __init__.py
 │   │   └── ollama_client.py
+│   │
+│   ├── prompts/
+│   │   ├── __init__.py
+│   │   └── rag_prompt.py
 │   │
 │   └── chains/
 │       ├── __init__.py
@@ -82,12 +137,15 @@ genai-rag-system/
 │
 ├── data/
 │   └── raw/
-│       └── attention_is_all_you_need.pdf
+│       ├── attention.pdf
+│       ├── rag.pdf
+│       └── bert.pdf
 │
 ├── ui/
 │   └── streamlit_app.py
 │
 ├── vector_db/
+│   └── chroma/
 │
 ├── ingest.py
 ├── pyproject.toml
@@ -98,74 +156,33 @@ genai-rag-system/
 
 ---
 
-# What is RAG?
-
-RAG stands for:
+# Core RAG Pipeline
 
 ```text
-Retrieval-Augmented Generation
-```
-
-Instead of relying only on an LLM’s internal knowledge, RAG:
-
-1. retrieves relevant information
-2. injects it into the prompt
-3. generates grounded answers
-
-This reduces hallucinations and enables question-answering over custom documents.
-
----
-
-# V1 Architecture
-
-```text
-                    ┌──────────────────┐
-                    │      PDF         │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │    Ingestion     │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │    Chunking      │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │   Embeddings     │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │    ChromaDB      │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │    Retrieval     │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │     Ollama       │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │     Answer       │
-                    └──────────────────┘
+Documents
+ ↓
+Chunking
+ ↓
+Embeddings
+ ↓
+Vector Storage
+ ↓
+Similarity Search
+ ↓
+Retrieved Context
+ ↓
+LLM Generation
+ ↓
+Answer
 ```
 
 ---
 
-# Step-by-Step Process
+# Step-by-Step System Flow
 
 ---
 
-# 1. PDF Ingestion
+# 1. Multi-Document Ingestion
 
 File:
 
@@ -173,26 +190,24 @@ File:
 app/ingestion/loader.py
 ```
 
-The PDF is loaded using:
+All PDFs inside:
 
-```python
-PyPDFLoader
+```text
+data/raw/
 ```
 
-This converts the PDF into LangChain `Document` objects.
-
-Each document contains:
-- page content
-- metadata
+are automatically loaded.
 
 Example:
 
-```python
-Document(
-    page_content="Transformers use attention...",
-    metadata={"page": 0}
-)
+```text
+data/raw/
+├── transformer.pdf
+├── bert.pdf
+├── rag.pdf
 ```
+
+Each document becomes LangChain `Document` objects.
 
 ---
 
@@ -204,7 +219,7 @@ File:
 app/ingestion/splitter.py
 ```
 
-The document is split into smaller chunks using:
+Documents are split using:
 
 ```python
 RecursiveCharacterTextSplitter
@@ -217,14 +232,32 @@ chunk_size=1000
 chunk_overlap=200
 ```
 
-Why chunking is needed:
-- improves retrieval quality
-- reduces context overload
+Why chunking matters:
+- improves retrieval precision
+- avoids context overflow
 - enables semantic search
 
 ---
 
-# 3. Embeddings
+# 3. Metadata Preservation
+
+Each chunk stores metadata:
+
+```python
+{
+   "source": "transformer.pdf",
+   "page": 4
+}
+```
+
+This enables:
+- citations
+- source tracking
+- future filtering
+
+---
+
+# 4. Embeddings
 
 File:
 
@@ -232,46 +265,43 @@ File:
 app/vectorstore/chroma_store.py
 ```
 
-Each chunk is converted into a dense vector using:
+Embedding model:
 
-```python
+```text
 sentence-transformers/all-MiniLM-L6-v2
 ```
+
+Each chunk becomes a dense vector.
 
 Example:
 
 ```text
 "The Transformer uses self-attention"
  ↓
-[0.12, -0.77, 0.44, ...]
+[0.12, -0.88, 0.44, ...]
 ```
-
-These vectors capture semantic meaning.
 
 ---
 
-# 4. Vector Database
+# 5. Persistent ChromaDB
 
-The embeddings are stored in:
-
-```text
-ChromaDB
-```
-
-Chroma automatically:
-- stores embeddings
-- builds vector indexes
-- enables similarity search
-
-The vector DB is persisted locally:
+Embeddings are stored in:
 
 ```text
 vector_db/chroma/
 ```
 
+ChromaDB handles:
+- vector storage
+- ANN indexing
+- similarity search
+- persistence
+
+The database persists across application restarts.
+
 ---
 
-# 5. Retrieval
+# 6. Retrieval
 
 When a user asks a question:
 
@@ -279,27 +309,21 @@ When a user asks a question:
 "What is self-attention?"
 ```
 
-the query is:
-1. converted into an embedding
-2. compared against stored vectors
-3. top-k similar chunks are retrieved
+the system:
+1. embeds the query
+2. searches vector DB
+3. retrieves top-k similar chunks
 
-Similarity search uses:
-- dense vectors
+Retrieval uses:
+- dense embeddings
 - cosine similarity
-- ANN indexing (HNSW)
+- HNSW ANN indexing
 
 ---
 
-# 6. Generation
+# 7. Generation
 
-File:
-
-```text
-app/chains/rag_chain.py
-```
-
-Retrieved chunks are combined into a prompt:
+Retrieved chunks are inserted into prompts:
 
 ```text
 Context
@@ -311,28 +335,24 @@ LLM
 Answer
 ```
 
-The LLM generates grounded responses using the retrieved context.
+The LLM generates grounded responses using retrieved context.
 
 ---
 
-# 7. Ollama
+# 8. Source Citations
 
-Local LLM inference is handled using:
-
-```text
-Ollama
-```
-
-Model used:
+V2 introduces citations:
 
 ```text
-phi3
+Sources:
+- transformer.pdf (Page 4)
+- rag.pdf (Page 2)
 ```
 
-Why Phi3?
-- lightweight
-- good for low VRAM GPUs
-- fast local inference
+This improves:
+- trustworthiness
+- explainability
+- debugging
 
 ---
 
@@ -378,7 +398,7 @@ uv sync
 
 # 4. Pull Ollama Model
 
-Install Ollama first:
+Install Ollama:
 
 https://ollama.com
 
@@ -394,21 +414,31 @@ ollama pull phi3
 
 ---
 
-# Step 1 — Ingest PDF
+# Step 1 — Add PDFs
+
+Place PDFs inside:
+
+```text
+data/raw/
+```
+
+---
+
+# Step 2 — Build Vector Database
 
 ```bash
 python ingest.py
 ```
 
 This performs:
-- loading
+- document ingestion
 - chunking
 - embedding generation
-- vector DB creation
+- vector DB persistence
 
 ---
 
-# Step 2 — Start Streamlit App
+# Step 3 — Start Streamlit App
 
 ```bash
 PYTHONPATH=. streamlit run ui/streamlit_app.py
@@ -416,14 +446,13 @@ PYTHONPATH=. streamlit run ui/streamlit_app.py
 
 ---
 
-# Step 3 — Ask Questions
-
-Examples:
+# Example Questions
 
 ```text
 What is self-attention?
-Summarize the transformer architecture.
-What are the key contributions of the paper?
+Explain the Transformer architecture.
+How does BERT differ from Transformers?
+Summarize retrieval-augmented generation.
 ```
 
 ---
@@ -431,9 +460,9 @@ What are the key contributions of the paper?
 # Retrieval Flow
 
 ```text
-Question
+User Question
  ↓
-Embedding
+Query Embedding
  ↓
 Similarity Search
  ↓
@@ -441,66 +470,96 @@ Top-k Chunks
  ↓
 Prompt Construction
  ↓
-LLM
+Ollama
  ↓
-Answer
+Answer + Sources
 ```
 
 ---
 
-# Important Concepts Learned in V1
+# Persistent Vector Database
 
-This project covers the core fundamentals of RAG systems:
+The Chroma database persists locally:
+
+```text
+vector_db/chroma/
+```
+
+Benefits:
+- faster startup
+- reusable embeddings
+- scalable ingestion pipeline
+
+---
+
+# Important Concepts Learned in V2
 
 | Concept | Description |
 |---|---|
-| Ingestion | Load documents |
-| Chunking | Split large text |
-| Embeddings | Semantic vector representation |
-| Vector DB | Store/search vectors |
-| Retrieval | Fetch relevant chunks |
-| Generation | Produce grounded answers |
-| Local LLMs | Offline inference |
+| Multi-document retrieval | Cross-document semantic search |
+| Metadata-aware RAG | Source-aware retrieval |
+| Persistent vector DBs | Reusable semantic storage |
+| ANN indexing | Efficient vector search |
+| Modular architecture | Clean separation of concerns |
+| Retrieval debugging | Chunk inspection |
 
 ---
 
-# Current Limitations (V1)
+# V1 vs V2
 
-This version does NOT include:
-- multi-document support
+| Feature | V1 | V2 |
+|---|---|---|
+| PDFs | Single | Multiple |
+| Metadata | Minimal | Rich metadata |
+| Citations | No | Yes |
+| Retrieval | Basic | Cross-document |
+| Persistence | Basic | Structured |
+| Knowledge Base | One file | Multi-document system |
+
+---
+
+# Current Limitations
+
+This version does NOT yet include:
 - chat memory
 - reranking
 - hybrid retrieval
-- metadata filtering
 - FastAPI backend
+- Docker deployment
 - authentication
-- evaluation pipelines
+- evaluation framework
+- agentic workflows
 
-These will be added in future versions.
+These are planned for future versions.
 
 ---
 
-# Future Improvements
+# Planned Future Improvements
 
-Planned upgrades:
-
-- Multi-PDF support
-- Conversational memory
 - Hybrid search
-- Reranking
+- Rerankers
+- Conversational memory
+- Multi-user support
 - FastAPI backend
 - Docker deployment
-- Agentic RAG workflows
-- Evaluation metrics
+- PostgreSQL + pgvector
+- Production deployment
+- Evaluation pipelines
 
 ---
 
 # Key Learning Outcome
 
-This project demonstrates the complete lifecycle of a basic local RAG application:
+This project demonstrates a production-style local multi-document RAG architecture:
 
 ```text
-Document → Retrieval → Generation
+Documents
+ ↓
+Embeddings
+ ↓
+Semantic Retrieval
+ ↓
+Grounded Generation
 ```
 
-and serves as the foundation for advanced GenAI systems.
+and forms the foundation for advanced GenAI systems.

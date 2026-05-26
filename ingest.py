@@ -1,24 +1,28 @@
-from app.ingestion.loader import load_pdf
+from app.ingestion.loader import load_pdfs
 from app.ingestion.splitter import split_documents
 from app.vectorstore.chroma_store import create_vector_store
 
 
-PDF_PATH = "data/raw/attention_is_all_you_need.pdf"
+DATA_PATH = "data/raw/"
 
 
-print("Loading PDF...")
-docs = load_pdf(PDF_PATH)
+def main():
 
-print(f"Loaded {len(docs)} pages")
+    print("\nLoading PDFs...")
+    documents = load_pdfs(DATA_PATH)
+
+    print(f"Loaded {len(documents)} pages")
+
+    print("\nSplitting documents...")
+    chunks = split_documents(documents)
+
+    print(f"Created {len(chunks)} chunks")
+
+    print("\nCreating vector database...")
+    create_vector_store(chunks)
+
+    print("\nVector database created successfully")
 
 
-print("Splitting documents...")
-chunks = split_documents(docs)
-
-print(f"Created {len(chunks)} chunks")
-
-
-print("Creating vector database...")
-create_vector_store(chunks)
-
-print("Vector DB created successfully")
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,10 @@
+from pathlib import Path
+
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 PERSIST_DIRECTORY = "vector_db/chroma"

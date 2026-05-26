@@ -2,6 +2,8 @@ from app.vectorstore.chroma_store import load_vector_store
 from app.llm.ollama_client import generate_response
 
 
+
+
 vector_db = load_vector_store()
 
 
